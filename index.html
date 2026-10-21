@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Hesitant Client</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Lora:ital,wght@0,400;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1A1A1A; --paper:#FFFFFF; --card:#F4F4F4; --line:#E3E3E0; --muted:#5E5E5E;
+    --gold:#C9A84C; --gold-deep:#8A6D1F; --soft:#D9D9D9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--paper);color:var(--ink);font-family:Lato,Calibri,Arial,sans-serif;font-size:18px}
+  button{font-family:inherit;font-size:16px;cursor:pointer;border-radius:4px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);padding:10px 18px;font-weight:700}
+  button.primary{background:var(--ink);color:#fff}
+  button.gold{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+  button:disabled{opacity:.4;cursor:default}
+  button.ghost{border-color:transparent;background:transparent;color:var(--muted);font-weight:400;padding:8px 10px}
+  .kicker{font-size:13px;letter-spacing:4px;font-weight:700;color:var(--gold);text-transform:uppercase}
+  .label{font-size:12px;letter-spacing:2.5px;font-weight:700;color:var(--gold-deep);text-transform:uppercase}
+  .serif{font-family:Lora,Cambria,Georgia,serif;font-style:italic}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid var(--line)}
+  header .brand{display:flex;align-items:center;gap:14px}
+  header .bar{width:6px;height:28px;background:var(--gold)}
+  header .right{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}
+  main{padding:28px 36px 36px}
+  .hidden{display:none !important}
+
+  /* Home */
+  .home h1{font-size:44px;margin:8px 0 6px}
+  .home p.lead{margin:0 0 28px;color:var(--muted);font-size:20px}
+  .sessions{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+  .session h2{font-size:22px;margin:0 0 12px}
+  .sc{display:flex;justify-content:space-between;align-items:center;gap:16px;background:var(--card);border-radius:6px;padding:16px 20px;margin-bottom:12px}
+  .sc .t{font-weight:700;font-size:19px}
+  .sc .s{color:var(--muted);font-size:15px;margin-top:4px}
+  .sc.done{opacity:.55}
+
+  /* Scenario */
+  .stage{display:grid;grid-template-columns:minmax(320px,38%) 1fr;gap:32px;align-items:start}
+  .left{display:flex;flex-direction:column;gap:20px;position:sticky;top:16px}
+  .clientcard{background:var(--card);border-radius:6px;padding:22px 24px}
+  .clientcard h2{margin:6px 0 10px;font-size:28px}
+  .clientcard p{margin:0;line-height:1.5;font-size:18px}
+  .timer{background:var(--ink);color:#fff;border-radius:6px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .timer .clock{font-size:64px;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;line-height:1}
+  .timer .what{font-size:14px;letter-spacing:2px;color:#cfcfcf;text-transform:uppercase;font-weight:700}
+  .timer .ctrl{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .timer .ctrl button{background:transparent;color:#fff;border-color:#666;padding:6px 10px;font-size:14px}
+  .timer.low .clock{animation:pulse 1s infinite}
+  .timer.over .clock{color:#fff}
+  .timer .track{height:6px;background:#3a3a3a;border-radius:3px;margin-top:10px;overflow:hidden}
+  .timer .fill{height:100%;background:var(--gold);width:100%;transition:width 1s linear}
+  @keyframes pulse{50%{opacity:.35}}
+  .ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-items:end}
+  .rung{border-radius:4px;background:var(--card);padding:10px 10px 12px;min-height:70px}
+  .rung:nth-child(2){min-height:88px}.rung:nth-child(3){min-height:106px}.rung:nth-child(4){min-height:124px}
+  .rung .n{font-weight:900;color:var(--gold);font-size:20px}
+  .rung .l{font-size:13px;font-weight:700;margin-top:4px}
+  .rung .r{font-size:12px;letter-spacing:1.5px;font-weight:700;margin-top:6px;text-transform:uppercase}
+  .rung.current{outline:2px solid var(--gold)}
+  .rung.strong{background:var(--ink);color:#fff}
+  .rung.neutral{background:#E6E2D6}
+  .rung.weak{background:#fff;outline:1.5px dashed var(--muted)}
+
+  .convo{display:flex;flex-direction:column;gap:14px;min-height:300px;max-height:calc(100vh - 360px);overflow:auto;padding-right:6px}
+  .msg{max-width:82%;border-radius:8px;padding:14px 18px;font-size:22px;line-height:1.45}
+  .msg .who{font-size:12px;letter-spacing:2.5px;font-weight:700;margin-bottom:6px;text-transform:uppercase}
+  .msg.client{align-self:flex-start;background:var(--card)}
+  .msg.client .who{color:var(--gold-deep)}
+  .msg.client .txt{font-family:Lora,Cambria,Georgia,serif;font-style:italic}
+  .msg.team{align-self:flex-end;background:var(--ink);color:#fff}
+  .msg.team .who{color:var(--gold)}
+  .msg .tag{display:inline-block;margin-left:10px;font-size:11px;letter-spacing:1.5px;padding:2px 8px;border-radius:10px;background:var(--gold);color:var(--ink)}
+  .typing{align-self:flex-start;color:var(--muted);font-style:italic;font-family:Lora,serif;font-size:20px}
+  .composer{margin-top:16px;display:flex;gap:12px;align-items:stretch}
+  .composer textarea{flex:1;font-family:inherit;font-size:20px;padding:14px 16px;border:1.5px solid var(--ink);border-radius:6px;resize:none;min-height:72px}
+  .judge{margin-top:16px;background:var(--card);border-radius:6px;padding:16px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .judge .note{flex-basis:100%;color:var(--muted);font-size:15px}
+  .panel{margin-top:16px;border-radius:6px;padding:22px 24px;background:var(--ink);color:#fff}
+  .panel h3{margin:6px 0 10px;font-size:30px}
+  .panel p{margin:6px 0;font-size:19px;line-height:1.5;color:#e9e9e9}
+  .panel .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .panel .actions button{background:transparent;color:#fff;border-color:#888}
+  .panel .actions button.gold{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+  .panel ul{margin:8px 0 0 0;padding-left:22px;font-size:19px;line-height:1.6;color:#e9e9e9}
+  .center{display:flex;flex-direction:column;align-items:flex-start;gap:16px;max-width:900px;margin:60px auto}
+  .center h1{font-size:46px;margin:0}
+  .center p{font-size:20px;color:var(--muted);margin:0;line-height:1.5}
+  .switcher{display:flex;align-items:center;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+  .switcher .label{margin-right:8px}
+  .switcher .sw{width:44px;height:40px;padding:0;font-size:17px;font-weight:900}
+  .switcher .sw.played{border-style:dashed;color:var(--muted)}
+  .switcher .sw.on{background:var(--ink);color:var(--gold);border-style:solid}
+  .settings{position:fixed;right:24px;top:72px;width:360px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.15);padding:20px;z-index:10}
+  .settings label{display:flex;justify-content:space-between;align-items:center;margin:10px 0;font-size:15px;gap:10px}
+  .settings input[type=number]{width:80px;font-size:15px;padding:4px 6px}
+  .pill{font-size:12px;letter-spacing:1.5px;font-weight:700;padding:4px 10px;border-radius:12px;background:var(--card);text-transform:uppercase}
+  .pill.ok{background:var(--ink);color:var(--gold)}
+  .err{color:#8a1f1f;font-size:15px}
+  @media (max-width:900px){.stage,.sessions{grid-template-columns:1fr}.convo{max-height:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="bar"></div><div class="kicker">The Architecture of Influence · Module 2 · The Hesitant Client</div></div>
+  <div class="right">
+    <span id="modePill" class="pill">Loading</span>
+    <button class="ghost" id="homeBtn">All scenarios</button>
+    <button class="ghost" id="settingsBtn">Settings</button>
+  </div>
+</header>
+
+<div class="settings hidden" id="settings">
+  <div class="label">Settings</div>
+  <label>Client replies
+    <select id="setMode"><option value="ai">AI generated</option><option value="scripted">Scripted, I judge</option></select>
+  </label>
+  <label>Seconds per team answer <input type="number" id="setAnswer" min="15" max="300" step="5"></label>
+  <label>Seconds for observers <input type="number" id="setObs" min="30" max="600" step="10"></label>
+  <label>Sound at the end of the timer <input type="checkbox" id="setSound"></label>
+  <label>Show the rating of each question live <input type="checkbox" id="setLive"></label>
+  <p style="font-size:13px;color:var(--muted);margin:12px 0 0">Ratings are always shown at the reveal. Keep live ratings off so the observers do their own judging.</p>
+  <div style="text-align:right;margin-top:12px"><button id="closeSettings">Close</button></div>
+</div>
+
+<main id="app"></main>
+
+<script>
+(function(){
+  'use strict';
+  const LADDER=['Ask the decision','Find the worry','Size it','Offer a next step'];
+  const ENDING_TEXT={commits:'The client commits',postpones:'The client postpones',declines:'The client declines'};
+  const OBS_QUESTIONS=['Which worry did you suspect, and at which exchange did you know?','Which question moved the client most?','Which rung was skipped or rushed?','Which one reply would you change, and to what?'];
+
+  const store={
+    get(k,d){try{const v=localStorage.getItem('hc_'+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+    set(k,v){try{localStorage.setItem('hc_'+k,JSON.stringify(v))}catch(e){}}
+  };
+  let passcode='';
+  let wrongPass=false;
+
+  const settings={mode:store.get('mode','ai'),answerSecs:store.get('answerSecs',60),obsSecs:store.get('obsSecs',120),sound:store.get('sound',true),live:store.get('live',false)};
+  let DATA=null, NEUTRAL=[], AI_OK=false;
+  let done=store.get('done',[]);
+  let S=null; // current scenario state
+
+  const app=document.getElementById('app');
+  const el=(tag,attrs,...kids)=>{const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='class')e.className=attrs[k];else if(k==='text')e.textContent=attrs[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),attrs[k]);else e.setAttribute(k,attrs[k])}for(const c of kids){if(c==null)continue;e.appendChild(typeof c==='string'?document.createTextNode(c):c)}return e};
+
+  // ---------- Timer ----------
+  const T={left:0,total:0,running:false,handle:null,label:'',onEnd:null};
+  function timerStart(secs,label){clearInterval(T.handle);T.total=secs;T.left=secs;T.label=label;T.running=true;T.handle=setInterval(tick,1000);paintTimer()}
+  function timerStop(){clearInterval(T.handle);T.running=false;paintTimer()}
+  function tick(){if(!T.running)return;T.left--;if(T.left===0)beep();if(T.left<=-600){timerStop()}paintTimer()}
+  function fmt(s){const neg=s<0;s=Math.abs(s);return (neg?'−':'')+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+  function paintTimer(){
+    const box=document.getElementById('timer');if(!box)return;
+    box.querySelector('.clock').textContent=fmt(T.left);
+    box.querySelector('.what').textContent=T.left<=0&&T.total?'Time · '+T.label:T.label;
+    box.classList.toggle('low',T.running&&T.left>0&&T.left<=10);
+    box.classList.toggle('over',T.left<=0&&T.total>0);
+    const f=box.querySelector('.fill');if(f)f.style.width=(T.total?Math.max(0,T.left)/T.total*100:(S&&S.phase==='card'?100:0))+'%';
+    const pb=box.querySelector('[data-t=pause]');if(pb)pb.textContent=T.running?'Pause':'Resume';
+    const cb=box.querySelector('.ctrl');if(cb)cb.style.visibility=T.total?'visible':'hidden';
+  }
+  function beep(){
+    if(!settings.sound)return;
+    try{const ctx=new (window.AudioContext||window.webkitAudioContext)();[0,0.35].forEach(d=>{const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=660;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.0001,ctx.currentTime+d);g.gain.exponentialRampToValueAtTime(0.3,ctx.currentTime+d+0.02);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+d+0.3);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.32)})}catch(e){}
+  }
+  function timerBox(){
+    return el('div',{class:'timer',id:'timer'},
+      el('div',null,el('div',{class:'what'}),el('div',{class:'clock',text:'0:00'}),el('div',{class:'track'},el('div',{class:'fill'}))),
+      el('div',{class:'ctrl'},
+        el('button',{'data-t':'pause',onclick:()=>{if(T.running)timerStop();else if(T.total){T.running=true;clearInterval(T.handle);T.handle=setInterval(tick,1000);paintTimer()}}},'Pause'),
+        el('button',{onclick:()=>{T.left+=15;if(T.left>T.total)T.total=T.left;paintTimer()}},'+15 s'),
+        el('button',{onclick:()=>{if(T.total)timerStart(T.total,T.label)}},'Restart')));
+  }
+
+  // ---------- Data ----------
+  async function load(){
+    try{
+      const r=await fetch('/api/scenarios',{headers:{'x-passcode':passcode}});
+      if(r.status===401){askPasscode();return}
+      wrongPass=false;
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const j=await r.json();DATA=j.scenarios;NEUTRAL=j.neutral;AI_OK=j.aiAvailable;
+      if(!AI_OK&&settings.mode==='ai')settings.mode='scripted';
+      paintMode();renderHome();
+    }catch(e){
+      app.replaceChildren(el('div',{class:'center'},el('h1',{text:'The scenarios could not be loaded'}),el('p',{text:'Open this page from its Vercel address, or run “vercel dev” locally. Opening index.html directly from your computer will not work, because the scenarios are served by the /api functions.'}),el('p',{class:'err',text:String(e.message||e)})));
+    }
+  }
+  function askPasscode(){
+    const inp=el('input',{type:'password',style:'font-size:22px;padding:10px 14px;border:1.5px solid #1A1A1A;border-radius:6px;width:320px',placeholder:'Password'});
+    const go=()=>{passcode=inp.value.trim();if(!passcode)return;wrongPass=true;load()};
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')go()});
+    document.getElementById('modePill').textContent='Locked';
+    app.replaceChildren(el('div',{class:'center'},el('div',{class:'kicker',text:'Facilitator access'}),el('h1',{text:'Enter the password'}),inp,wrongPass&&passcode?el('p',{class:'err',text:'That password is not right. Try again.'}):null,el('button',{class:'primary',onclick:go},'Continue')));
+    inp.focus();
+  }
+  function paintMode(){
+    const p=document.getElementById('modePill');
+    if(settings.mode==='ai'){p.textContent='AI client';p.className='pill ok'}else{p.textContent=AI_OK?'Scripted':'Scripted · no AI key';p.className='pill'}
+  }
+
+  // ---------- Home ----------
+  function renderHome(){
+    timerStop();S=null;
+    const list=el('div',{class:'session'},
+      el('div',{class:'label',text:'Each group plays three of the four · the fourth is a spare'}),
+      el('h2',{text:'Scenarios A to D'}),
+      ...DATA.map(s=>el('div',{class:'sc'+(done.includes(s.id)?' done':'')},
+        el('div',null,el('div',{class:'t',text:'Scenario '+s.id+' · '+s.title}),el('div',{class:'s',text:done.includes(s.id)?'Played':'Not played yet'})),
+        el('button',{class:done.includes(s.id)?'':'primary',onclick:()=>startScenario(s.id)},done.includes(s.id)?'Play again':'Start'))));
+    app.replaceChildren(el('div',{class:'home'},
+      el('div',{class:'kicker',text:'Practice 2 · teams of three'}),
+      el('h1',{text:'The hesitant client'}),
+      el('p',{class:'lead serif',text:'Find a worry the client will not name, using only your questions, and move the client to a decision.'}),
+      el('div',{style:'max-width:760px'},list),
+      el('div',{style:'margin-top:20px;display:flex;gap:12px;align-items:center'},
+        el('button',{onclick:()=>{done=[];store.set('done',done);renderHome()}},'Clear the played marks before the next group'))));
+  }
+
+  // ---------- Scenario ----------
+  function startScenario(id){
+    const sc=DATA.find(s=>s.id===id);
+    S={sc,phase:'card',exchange:0,transcript:[],ratings:[],ending:null,busy:false,error:''};
+    timerStop();T.total=0;T.left=settings.answerSecs;T.label='Starts with the client’s first line';
+    render();
+  }
+  function idx(){return DATA.findIndex(s=>s.id===S.sc.id)}
+
+  function render(){
+    if(!S){renderHome();return}
+    const sc=S.sc;
+    const left=el('div',{class:'left'},
+      el('div',{class:'clientcard'},
+        el('div',{class:'label',text:'Scenario '+sc.id+' of D'}),
+        el('h2',{text:sc.title}),
+        el('p',{text:sc.card})),
+      timerBox(),
+      ladder());
+    const right=el('div',null,switcher(),el('div',{class:'label',text:'The conversation'}),convo(),controls());
+    app.replaceChildren(el('div',{class:'stage'},left,right));
+    paintTimer();
+    const c=document.getElementById('convo');if(c)c.scrollTop=c.scrollHeight;
+    const ta=document.getElementById('answer');if(ta)ta.focus();
+  }
+
+  function switcher(){
+    const running=['answer','waiting','judge','concluded','observers'].includes(S.phase);
+    return el('div',{class:'switcher'},el('span',{class:'label',text:'Go to scenario'}),
+      ...DATA.map(s=>el('button',{class:'sw'+(s.id===S.sc.id?' on':'')+(done.includes(s.id)?' played':''),title:'Scenario '+s.id+' · '+s.title+(done.includes(s.id)?' (played)':''),
+        onclick:()=>{if(s.id===S.sc.id)return;if(running&&!window.confirm('Leave scenario '+S.sc.id+'? This run will be lost.'))return;startScenario(s.id)}},s.id)));
+  }
+
+  function ladder(){
+    const show=settings.live||S.phase==='revealed';
+    return el('div',null,el('div',{class:'label',style:'margin-bottom:8px',text:'The Decision Ladder'}),
+      el('div',{class:'ladder'},...LADDER.map((l,i)=>{
+        const r=S.ratings[i];let cls='rung';
+        if(r&&show)cls+=' '+r;
+        if(S.exchange===i+1&&['answer','waiting','judge'].includes(S.phase))cls+=' current';
+        return el('div',{class:cls},el('div',{class:'n',text:'0'+(i+1)}),el('div',{class:'l',text:l}),
+          el('div',{class:'r',text:r?(show?r:'asked'):''}));
+      })));
+  }
+
+  function convo(){
+    const box=el('div',{class:'convo',id:'convo'});
+    if(S.phase==='card'){
+      box.appendChild(el('div',{class:'msg client'},el('div',{class:'who',text:'Before we start'}),el('div',{class:'txt',text:'Read the client card together. When the team is ready, show the client’s opening line. The timer starts with it.'})));
+    }
+    S.transcript.forEach((m,i)=>{
+      const who=m.speaker==='client'?'The client':'Your team · question '+m.n;
+      const w=el('div',{class:'who',text:who});
+      if(m.speaker==='team'&&(settings.live||S.phase==='revealed')&&S.ratings[m.n-1])w.appendChild(el('span',{class:'tag',text:S.ratings[m.n-1]}));
+      box.appendChild(el('div',{class:'msg '+m.speaker},w,el('div',{class:'txt',text:m.text})));
+    });
+    if(S.phase==='waiting')box.appendChild(el('div',{class:'typing',text:'The client is thinking…'}));
+    return box;
+  }
+
+  function controls(){
+    const sc=S.sc, wrap=el('div');
+    if(S.phase==='card'){
+      wrap.appendChild(el('div',{class:'composer'},el('button',{class:'primary',style:'font-size:20px;padding:16px 26px',onclick:showOpening},'Show the client’s opening line')));
+    }
+    if(S.phase==='answer'){
+      const ta=el('textarea',{id:'answer',placeholder:'Type the team’s question exactly as the spokesperson reads it, then press Enter'});
+      ta.value=S.draft||'';
+      ta.addEventListener('input',()=>{S.draft=ta.value});
+      ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+      wrap.appendChild(el('div',{class:'composer'},ta,el('button',{class:'primary',onclick:send},'Send')));
+      if(S.error)wrap.appendChild(el('p',{class:'err',text:S.error}));
+    }
+    if(S.phase==='judge'){
+      const ex=S.exchange;
+      wrap.appendChild(el('div',{class:'judge'},
+        el('div',{class:'note',text:S.error?S.error+' Judge this question yourself and the scripted reply will appear.':'How did this question land? Choose, and the scripted client reply will appear.'}),
+        el('button',{class:'primary',onclick:()=>scripted('strong')},'Strong'),
+        el('button',{onclick:()=>scripted('neutral')},'Neutral'),
+        el('button',{onclick:()=>scripted('weak')},'Weak'),
+        settings.mode==='ai'&&AI_OK?el('button',{class:'ghost',onclick:()=>{S.transcript.pop();S.phase='answer';S.error='';askAI(S.lastText)}},'Try the AI again'):null,
+        el('button',{class:'ghost',onclick:()=>{const t=S.transcript.pop();S.draft=t.text;S.phase='answer';S.error='';render()}},'Edit the question')));
+    }
+    if(S.phase==='concluded'||S.phase==='observers'){
+      const obs=S.phase==='observers';
+      wrap.appendChild(el('div',{class:'panel'},
+        el('div',{class:'kicker',text:'After four questions'}),
+        el('h3',{text:ENDING_TEXT[S.ending]}),
+        obs?el('div',null,el('p',{text:'Observers, before the reveal:'}),el('ul',null,...OBS_QUESTIONS.map(q=>el('li',{text:q})))):el('p',{text:'Turn to the two observing teams for their conclusions, then reveal the worry.'}),
+        el('div',{class:'actions'},
+          obs?null:el('button',{class:'gold',onclick:()=>{S.phase='observers';timerStart(settings.obsSecs,'Observers’ conclusions');render()}},'Observers’ conclusions · '+fmt(settings.obsSecs)),
+          el('button',{class:obs?'gold':'',onclick:reveal},'Reveal the hidden worry'))));
+    }
+    if(S.phase==='revealed'){
+      const i=idx(), next=DATA[i+1];
+      const strong=S.ratings.filter(r=>r==='strong').length;
+      wrap.appendChild(el('div',{class:'panel'},
+        el('div',{class:'kicker',text:'The hidden worry'}),
+        el('h3',{text:sc.worry}),
+        el('p',{text:sc.hidden}),
+        el('p',{class:'serif',style:'color:#C9A84C',text:sc.reveal}),
+        el('p',{text:ENDING_TEXT[S.ending]+' · '+strong+' strong question'+(strong===1?'':'s')+' out of 4.'}),
+        el('div',{class:'actions'},
+          next?el('button',{class:'gold',onclick:()=>goNext(next)},'Next scenario · '+next.id+' · '+next.title):el('button',{class:'gold',onclick:renderEnd},'Finish'),
+          next?el('button',{onclick:renderEnd},'End the practice'):null,
+          el('button',{onclick:renderHome},'Choose another scenario'),
+          el('button',{onclick:()=>startScenario(sc.id)},'Replay this scenario'))));
+    }
+    if(S.phase!=='revealed'&&S.phase!=='card'){
+      wrap.appendChild(el('div',{style:'margin-top:10px;text-align:right'},el('button',{class:'ghost',onclick:()=>{if(confirmReset())startScenario(sc.id)}},'Restart this scenario')));
+    }
+    return wrap;
+  }
+  function confirmReset(){return true}
+
+  function showOpening(){
+    S.transcript.push({speaker:'client',text:S.sc.opening});
+    S.exchange=1;S.phase='answer';S.draft='';
+    timerStart(settings.answerSecs,'Team answer · question 1 of 4');
+    render();
+  }
+
+  function send(){
+    const ta=document.getElementById('answer');const text=(ta?ta.value:'').trim();
+    if(!text)return;
+    S.draft='';S.error='';S.lastText=text;
+    timerStop();
+    S.transcript.push({speaker:'team',text,n:S.exchange});
+    if(settings.mode==='ai'&&AI_OK){askAI(text)}else{S.phase='judge';render()}
+  }
+
+  async function askAI(){
+    if(S.transcript[S.transcript.length-1].speaker!=='team')S.transcript.push({speaker:'team',text:S.lastText,n:S.exchange});
+    S.phase='waiting';render();
+    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),25000);
+    try{
+      const r=await fetch('/api/client',{method:'POST',signal:ctrl.signal,headers:{'content-type':'application/json','x-passcode':passcode},
+        body:JSON.stringify({scenarioId:S.sc.id,exchange:S.exchange,transcript:S.transcript,ratings:S.ratings})});
+      clearTimeout(to);
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(j.error==='no_api_key'?'No AI key is set on the server.':'The AI did not answer ('+(j.error||r.status)+').');
+      applyReply(j.rating,j.reply,j.ending);
+    }catch(e){
+      clearTimeout(to);
+      S.error=e.name==='AbortError'?'The AI took too long.':String(e.message||e);
+      S.phase='judge';render();
+    }
+  }
+
+  function decideEnding(ratings){
+    const strong=ratings.filter(r=>r==='strong').length;
+    if(strong>=3&&ratings[1]==='strong'&&ratings[2]==='strong')return 'commits';
+    if(strong>=2)return 'postpones';
+    return 'declines';
+  }
+
+  function scripted(rating){
+    const ex=S.sc.exchanges[S.exchange-1];
+    let reply=rating==='strong'?ex.strong:rating==='weak'?ex.weak:NEUTRAL[S.exchange-1];
+    let ending=null;
+    if(S.exchange===4){
+      ending=decideEnding([...S.ratings,rating]);
+      reply=(rating==='strong'?ex.strong+' ':'')+S.sc.endings[ending];
+    }
+    S.error='';
+    applyReply(rating,reply,ending);
+  }
+
+  function applyReply(rating,reply,ending){
+    S.ratings[S.exchange-1]=rating;
+    S.transcript.push({speaker:'client',text:reply});
+    if(S.exchange<4){
+      S.exchange++;S.phase='answer';
+      timerStart(settings.answerSecs,'Team answer · question '+S.exchange+' of 4');
+    }else{
+      S.ending=ending||decideEnding(S.ratings);
+      S.phase='concluded';timerStop();T.total=0;T.left=0;T.label='Run complete';
+    }
+    render();
+  }
+
+  function reveal(){
+    timerStop();T.total=0;T.left=0;T.label='Worry revealed';S.phase='revealed';
+    if(!done.includes(S.sc.id)){done.push(S.sc.id);store.set('done',done)}
+    render();
+  }
+
+  function goNext(next){
+    startScenario(next.id);
+  }
+  function renderEnd(){
+    timerStop();
+    app.replaceChildren(el('div',{class:'center'},el('div',{class:'kicker',text:'Practice complete'}),el('h1',{text:'Which rung did you skip?'}),el('p',{class:'serif',text:'Back to the room for the debrief.'}),el('button',{onclick:renderHome},'All scenarios')));
+  }
+
+  // ---------- Settings ----------
+  const sp=document.getElementById('settings');
+  document.getElementById('settingsBtn').onclick=()=>{
+    document.getElementById('setMode').value=settings.mode;
+    document.getElementById('setAnswer').value=settings.answerSecs;
+    document.getElementById('setObs').value=settings.obsSecs;
+    document.getElementById('setSound').checked=settings.sound;
+    document.getElementById('setLive').checked=settings.live;
+    sp.classList.toggle('hidden');
+  };
+  document.getElementById('closeSettings').onclick=()=>sp.classList.add('hidden');
+  document.getElementById('setMode').onchange=e=>{settings.mode=e.target.value;if(settings.mode==='ai'&&!AI_OK){alertInline();}store.set('mode',settings.mode);paintMode();if(S)render()};
+  function alertInline(){settings.mode='scripted';document.getElementById('setMode').value='scripted'}
+  document.getElementById('setAnswer').onchange=e=>{settings.answerSecs=Math.max(15,Number(e.target.value)||60);store.set('answerSecs',settings.answerSecs)};
+  document.getElementById('setObs').onchange=e=>{settings.obsSecs=Math.max(30,Number(e.target.value)||120);store.set('obsSecs',settings.obsSecs);if(S)render()};
+  document.getElementById('setSound').onchange=e=>{settings.sound=e.target.checked;store.set('sound',settings.sound)};
+  document.getElementById('setLive').onchange=e=>{settings.live=e.target.checked;store.set('live',settings.live);if(S)render()};
+  document.getElementById('homeBtn').onclick=()=>{if(DATA)renderHome()};
+
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "hesitant-client",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Architecture of Influence, Module 2: the hesitant client exercise",
+  "engines": { "node": ">=18" }
+}
