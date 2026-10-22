@@ -1,0 +1,6 @@
+{
+  "functions": {
+    "api/client.js": { "maxDuration": 30 },
+    "api/coach.js": { "maxDuration": 30 }
+  }
+}
